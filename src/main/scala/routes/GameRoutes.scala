@@ -13,7 +13,7 @@ import utils.JsonSupport
 import scala.util.{Failure, Success}
 
 class GameRoutes(system: ActorSystem, gameActor: ActorRef)(implicit val ec: ExecutionContext) extends JsonSupport {
-  implicit val timeout: Timeout = Timeout(55.seconds)
+  implicit val timeout: Timeout = Timeout(30.seconds)
 
   val routes: Route =
     path("health") {
@@ -69,6 +69,8 @@ class GameRoutes(system: ActorSystem, gameActor: ActorRef)(implicit val ec: Exec
       case moveResult@MoveResult(_) =>
         // If the game is already over, return the result
         Future.successful(moveResult)
+      case _ =>
+        Future.failed(new RuntimeException("Unexpected response"))
     } recover {
       case ex => MoveResult(s"Unexpected error: ${ex.getMessage}")
     }

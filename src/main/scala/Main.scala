@@ -48,7 +48,7 @@ object Main extends App {
   val outputFilePath = s"${args(2)}/results.txt"
 
   // Creating Akka HTTP Actors
-  implicit val system: ActorSystem = ActorSystem("akka-http-example")
+  implicit val system: ActorSystem = ActorSystem("akka-http-policeman-thief")
   implicit val materializer: Materializer = Materializer.matFromSystem
   implicit val executionContext: ExecutionContextExecutor = system.dispatcher
 
@@ -68,7 +68,7 @@ object Main extends App {
 
   val bindingFuture = Http().newServerAt("0.0.0.0", 8080).bind(gameRoutes.routes)
 
-  logger.info(s"Server online at http://localhost:8080/")
+  logger.info(s"Server online at port 8080")
 
   // To gracefully shutdown the server
   scala.io.StdIn.readLine("Press ENTER to stop the server.")
