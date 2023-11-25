@@ -16,11 +16,13 @@ class GameRoutes(system: ActorSystem, gameActor: ActorRef)(implicit val ec: Exec
   implicit val timeout: Timeout = Timeout(30.seconds)
 
   val routes: Route =
+  // Health check route
     path("health") {
       get {
         complete(StatusCodes.OK, "Hello, Akka HTTP!")
       }
     } ~
+      // Move routes for police and thief
       pathPrefix("move") {
         path("police") {
           get {
@@ -35,23 +37,28 @@ class GameRoutes(system: ActorSystem, gameActor: ActorRef)(implicit val ec: Exec
             }
           }
       } ~
+      // Get game state route
       path("state") {
         get {
           val result = (gameActor ? GetState).mapTo[GameResponse]
           complete(result)
         }
       } ~
+      // Restart game route
       path("restart") {
         get {
           val result = (gameActor ? RestartGame).mapTo[MoveResult]
           complete(result)
         }
-      } ~ path("autoPlay") {
-      get {
-        handleAutoPlay()
+      } ~
+      // Auto-play route
+      path("autoPlay") {
+        get {
+          handleAutoPlay()
+        }
       }
-    }
 
+  // Handle auto-play request
   private def handleAutoPlay(): Route = {
     onComplete(autoPlayGame()) {
       case Success(result) =>
@@ -61,6 +68,7 @@ class GameRoutes(system: ActorSystem, gameActor: ActorRef)(implicit val ec: Exec
     }
   }
 
+  // Auto-play the game asynchronously
   private def autoPlayGame(): Future[MoveResult] =
     (gameActor ? GetState).flatMap {
       case StateResult(_) =>
@@ -75,6 +83,7 @@ class GameRoutes(system: ActorSystem, gameActor: ActorRef)(implicit val ec: Exec
       case ex => MoveResult(s"Unexpected error: ${ex.getMessage}")
     }
 
+  // Perform moves for both thief and police
   private def moveThiefAndPolice(): Future[MoveResult] = {
     for {
       thiefResult <- (gameActor ? MoveThief).mapTo[GameResponse]
