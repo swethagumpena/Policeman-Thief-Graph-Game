@@ -1,50 +1,20 @@
-import NetGraphAlgebraDefs.{Action, NodeObject}
 import actors.GameActor
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.http.scaladsl.Http
 import akka.stream.Materializer
 import org.slf4j.LoggerFactory
-import com.google.common.graph.{MutableValueGraph, ValueGraphBuilder}
 import routes.GameRoutes
-import utils.LoadGraph
+import utils.CreateGuavaGraph.loadAndCreate
 
 import scala.concurrent.ExecutionContextExecutor
 
 object Main extends App {
 
   // Setting up the logger
-  private val logger = LoggerFactory.getLogger(getClass)
+  val logger = LoggerFactory.getLogger(getClass)
 
-  def loadAndCreateGraph(graphFilePath: String): Option[MutableValueGraph[NodeObject, Action]] = {
-    val (nodes, edges) = LoadGraph.load(graphFilePath)
-
-    if (nodes.isEmpty || edges.isEmpty) {
-      logger.warn("Input is not of the right format")
-      None
-    } else {
-      logger.info("Graph successfully loaded")
-
-      // Create a MutableGraph using Guava's GraphBuilder
-      val valueGraph: MutableValueGraph[NodeObject, Action] = ValueGraphBuilder.directed().build()
-
-      // Add nodes to the graph
-      nodes.foreach(valueGraph.addNode)
-
-      // Add edges to the graph
-      edges.foreach { action =>
-        val nodeFromOption: Option[NodeObject] = nodes.find(_.id == action.fromNode.id)
-        val nodeToOption: Option[NodeObject] = nodes.find(_.id == action.toNode.id)
-        for {
-          nodeFrom <- nodeFromOption
-          nodeTo <- nodeToOption
-        } yield valueGraph.putEdgeValue(nodeFrom, nodeTo, action)
-      }
-      Some(valueGraph)
-    }
-  }
-
-  val originalValueGraph = loadAndCreateGraph(args(0))
-  val perturbedValueGraph = loadAndCreateGraph(args(1))
+  val originalValueGraph = loadAndCreate(args(0))
+  val perturbedValueGraph = loadAndCreate(args(1))
   val outputFilePath = s"${args(2)}/results.txt"
 
   // Creating Akka HTTP Actors

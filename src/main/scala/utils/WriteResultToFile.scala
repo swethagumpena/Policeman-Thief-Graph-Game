@@ -5,6 +5,9 @@ import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.{PutObjectRequest, S3Exception}
 import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration
+import software.amazon.awssdk.http.apache.ApacheHttpClient
+import java.time.Duration
 
 object WriteResultToFile {
   def gameSummary(filePath: String, content: List[String]): Unit = {
@@ -16,7 +19,18 @@ object WriteResultToFile {
   }
 
   private def writeToS3(filePath: String, content: List[String]): Unit = {
-    val s3Client = S3Client.builder().region(Region.US_EAST_1).build()
+    // Use the Apache HTTP client explicitly
+    val apacheHttpClient = ApacheHttpClient.builder().build()
+
+    val s3Client = S3Client.builder()
+      .region(Region.US_EAST_1)
+      .httpClient(apacheHttpClient) // Provide the custom HTTP client
+      .overrideConfiguration(
+        ClientOverrideConfiguration.builder()
+          .apiCallTimeout(Duration.ofSeconds(10))
+          .build()
+      )
+      .build()
 
     try {
       val concatenatedContent = content.mkString("\n") // Concatenate strings with newline separator
