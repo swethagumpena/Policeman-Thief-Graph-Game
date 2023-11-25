@@ -7,7 +7,7 @@ Repo for the Akka HTTP Homework-3 for CS441-Fall2023
 
 ---
 
-AWS EC2 Deployment video link: 
+AWS EC2 Deployment video link: https://youtu.be/Xr3ByXa3yWk
 
 ---
 
