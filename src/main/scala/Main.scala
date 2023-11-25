@@ -29,6 +29,7 @@ object Main extends App {
       system.actorOf(Props(new GameActor(originalGraph, perturbedGraph, outputFilePath)), "gameActor")
     case _ =>
       // Case where one or both graphs couldn't be loaded
+      logger.warn("Failed to create gameActor")
       throw new IllegalStateException("Failed to create gameActor")
   }
 

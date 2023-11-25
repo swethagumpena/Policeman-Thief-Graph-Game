@@ -3,8 +3,10 @@ package actors
 import NetGraphAlgebraDefs.{Action, NodeObject}
 import akka.actor.Actor
 import com.google.common.graph.MutableValueGraph
+import org.slf4j.LoggerFactory
 import utils.SimilarityScore.jaccardSimilarity
 import utils.WriteResultToFile.gameSummary
+
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
@@ -27,6 +29,8 @@ class GameActor(originalValueGraph: MutableValueGraph[NodeObject, Action], pertu
   // Initialize your game state
   var policeState: Int = getRandomNode().id
   var thiefState: Int = getFarthestNodeFrom(policeState, perturbedValueGraph).id
+
+  private val logger = LoggerFactory.getLogger(getClass)
 
   // Define game state variables
   private var gameIsOver: Boolean = false
@@ -84,6 +88,7 @@ class GameActor(originalValueGraph: MutableValueGraph[NodeObject, Action], pertu
     policeState = getRandomNode().id
     thiefState = getFarthestNodeFrom(policeState, perturbedValueGraph).id
     val resultMessage = "Game restarted."
+    logger.info(resultMessage)
     gameEvents = gameEvents :+ resultMessage
     sender() ! MoveResult(resultMessage)
   }
@@ -93,6 +98,7 @@ class GameActor(originalValueGraph: MutableValueGraph[NodeObject, Action], pertu
       gameIsOver = true
       winner = Some("Police")
       val resultMessage = s"Police has caught the Thief at $policeState. Game over. Police has won. Restart the game."
+      logger.info(resultMessage)
       gameEvents = gameEvents :+ resultMessage
       sender() ! MoveResult(resultMessage)
     } else {
@@ -102,10 +108,12 @@ class GameActor(originalValueGraph: MutableValueGraph[NodeObject, Action], pertu
         gameIsOver = true
         winner = Some("Thief")
         val resultMessage = s"Thief has reached valuable data at ${valuableNodeId}. Game over. Thief has won. Restart the game."
+        logger.info(resultMessage)
         gameEvents = gameEvents :+ resultMessage
         sender() ! MoveResult(resultMessage)
       } else {
         val resultMessage = s"Police is at $policeState, Thief is at $thiefState."
+        logger.info(resultMessage)
         gameEvents = gameEvents :+ resultMessage
         sender() ! StateResult(resultMessage)
       }
@@ -114,6 +122,7 @@ class GameActor(originalValueGraph: MutableValueGraph[NodeObject, Action], pertu
 
   def sendGameOverMessage(): Unit = {
     val resultMessage = s"Game over. ${winner.map(w => s"$w has won.").getOrElse("It's a draw.")} Restart the game."
+    logger.info(resultMessage)
     gameEvents = gameEvents :+ resultMessage
     sender() ! MoveResult(resultMessage)
     gameSummary(outputFilePath, gameEvents)
@@ -121,6 +130,7 @@ class GameActor(originalValueGraph: MutableValueGraph[NodeObject, Action], pertu
 
   def sendDeadEndReachedGameOverMessage(currentNode: Int): Unit = {
     val resultMessage = s"Cannot move further at $currentNode. Game over. ${winner.map(w => s"$w has won.").getOrElse("It's a draw.")} Restart the game."
+    logger.info(resultMessage)
     gameEvents = gameEvents :+ resultMessage
     sender() ! MoveResult(resultMessage)
     gameSummary(outputFilePath, gameEvents)
@@ -128,6 +138,7 @@ class GameActor(originalValueGraph: MutableValueGraph[NodeObject, Action], pertu
 
   def sendInvalidMoveGameOverMessage(plannedMove: Int): Unit = {
     val resultMessage = s"Invalid move at $plannedMove. Game over. ${winner.map(w => s"$w has won.").getOrElse("It's a draw.")} Restart the game."
+    logger.info(resultMessage)
     gameEvents = gameEvents :+ resultMessage
     sender() ! MoveResult(resultMessage)
     gameSummary(outputFilePath, gameEvents)
